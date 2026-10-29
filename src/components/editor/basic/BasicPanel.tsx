@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { PlusCircle, GripVertical, Trash2, Eye, EyeOff } from "lucide-react";
 import { Reorder, AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "@/i18n/compat/client";
@@ -18,6 +18,7 @@ interface CustomFieldProps {
   field: CustomFieldType;
   onUpdate: (field: CustomFieldType) => void;
   onDelete: (id: string) => void;
+  onReorderEnd: () => void;
 }
 
 const itemAnimations = {
@@ -31,6 +32,7 @@ const CustomField: React.FC<CustomFieldProps> = ({
   field,
   onUpdate,
   onDelete,
+  onReorderEnd,
 }) => {
   const t = useTranslations("workbench.basicPanel");
 
@@ -39,6 +41,7 @@ const CustomField: React.FC<CustomFieldProps> = ({
       value={field}
       id={field.id}
       className="group touch-none list-none"
+      onDragEnd={onReorderEnd}
     >
       <motion.div
         {...itemAnimations}
@@ -139,7 +142,7 @@ const CustomField: React.FC<CustomFieldProps> = ({
             onClick={() => onDelete(field.id)}
             className={cn(
               "shrink-0 h-8 px-2",
-              "text-neutral-500 dark:text-neutral-400",
+              "text-neutral-500 dark:text-muted-foreground",
               "hover:text-red-600 dark:hover:text-red-400"
             )}
           >
@@ -169,15 +172,28 @@ const BasicPanel: React.FC = () => {
       visible: field.visible ?? true,
     }));
   });
+  const basicFieldsRef = useRef(basicFields);
+  const customFieldsRef = useRef(customFields);
   const t = useTranslations("workbench.basicPanel");
 
+  useEffect(() => {
+    basicFieldsRef.current = basicFields;
+  }, [basicFields]);
+
+  useEffect(() => {
+    customFieldsRef.current = customFields;
+  }, [customFields]);
+
   const handleBasicReorder = (newOrder: BasicFieldType[]) => {
+    basicFieldsRef.current = newOrder;
     setBasicFields(newOrder);
-    updateBasicInfo({
-      ...basic,
-      fieldOrder: newOrder,
-    });
   };
+
+  const commitBasicReorder = useCallback(() => {
+    updateBasicInfo({
+      fieldOrder: basicFieldsRef.current,
+    });
+  }, [updateBasicInfo]);
 
   const toggleFieldVisibility = (fieldId: string, isVisible: boolean) => {
     const newFields = basicFields.map((field) =>
@@ -245,12 +261,15 @@ const BasicPanel: React.FC = () => {
   };
 
   const handleCustomFieldsReorder = (newOrder: CustomFieldType[]) => {
+    customFieldsRef.current = newOrder;
     setCustomFields(newOrder);
-    updateBasicInfo({
-      ...basic,
-      customFields: newOrder,
-    });
   };
+
+  const commitCustomFieldsReorder = useCallback(() => {
+    updateBasicInfo({
+      customFields: customFieldsRef.current,
+    });
+  }, [updateBasicInfo]);
 
   const renderBasicField = (field: BasicFieldType) => {
     const selectedIcon = basic?.icons?.[field.key] || "User";
@@ -262,6 +281,7 @@ const BasicPanel: React.FC = () => {
         key={field.id}
         className="group touch-none list-none"
         dragListener={field.key !== "name" && field.key !== "title"}
+        onDragEnd={commitBasicReorder}
       >
         <motion.div
           {...itemAnimations}
@@ -326,8 +346,8 @@ const BasicPanel: React.FC = () => {
               size="sm"
               className={cn(
                 "shrink-0 h-8 px-2",
-                "text-neutral-500 dark:text-neutral-400",
-                "hover:text-neutral-700 dark:hover:text-neutral-200"
+                "text-neutral-500 dark:text-muted-foreground",
+                "hover:text-neutral-700 dark:hover:text-foreground"
               )}
               onClick={() => toggleFieldVisibility(field.id, !field.visible)}
             >
@@ -344,7 +364,7 @@ const BasicPanel: React.FC = () => {
                 size="sm"
                 className={cn(
                   "shrink-0 h-8 px-2",
-                  "text-neutral-500 dark:text-neutral-400",
+                  "text-neutral-500 dark:text-muted-foreground",
                   "hover:text-red-600 dark:hover:text-red-400"
                 )}
                 onClick={() => deleteBasicField(field.id)}
@@ -393,7 +413,7 @@ const BasicPanel: React.FC = () => {
 
               <motion.div className="space-y-6">
                 <motion.div className="space-y-3">
-                  <motion.h3 className="font-medium text-neutral-900 dark:text-neutral-200 px-1">
+                  <motion.h3 className="font-medium text-neutral-900 dark:text-foreground px-1">
                     {t("basicField")}
                   </motion.h3>
                   <AnimatePresence mode="popLayout">
@@ -410,7 +430,7 @@ const BasicPanel: React.FC = () => {
                 </motion.div>
 
                 <motion.div className="space-y-3">
-                  <motion.h3 className="font-medium text-neutral-900 dark:text-neutral-200 px-1">
+                  <motion.h3 className="font-medium text-neutral-900 dark:text-foreground px-1">
                     {t("customField")}
                   </motion.h3>
                   <AnimatePresence mode="popLayout">
@@ -428,6 +448,7 @@ const BasicPanel: React.FC = () => {
                             field={field}
                             onUpdate={updateCustomField}
                             onDelete={deleteCustomField}
+                            onReorderEnd={commitCustomFieldsReorder}
                           />
                         ))}
                     </Reorder.Group>
@@ -450,7 +471,7 @@ const BasicPanel: React.FC = () => {
                     transition={{ delay: 0.2 }}
                   >
                     <div className="flex items-center justify-between">
-                      <motion.h3 className="font-medium text-neutral-900 dark:text-neutral-200 px-1">
+                      <motion.h3 className="font-medium text-neutral-900 dark:text-foreground px-1">
                         {t("githubContributions")}
                       </motion.h3>
 

@@ -21,16 +21,17 @@ import {
 import ResumeTemplateComponent from "@/components/templates";
 import { DEFAULT_TEMPLATES } from "@/config";
 import { cn } from "@/lib/utils";
-import { normalizeFontFamily } from "@/utils/fonts";
+import { normalizeFontFamily, preloadFontFamily } from "@/utils/fonts";
+import { Edit2, Copy, Trash2 } from "lucide-react";
 
 interface ResumeCardItemProps {
     id: string;
     resume: any;
     t: any;
     locale: string;
-    setActiveResume: (id: string) => void;
     router: any;
     deleteResume: (resume: any) => void;
+    duplicateResume: (resume: any) => void;
     index: number;
 }
 
@@ -39,13 +40,16 @@ export const ResumeCardItem = ({
     resume,
     t,
     locale,
-    setActiveResume,
     router,
     deleteResume,
+    duplicateResume,
     index,
 }: ResumeCardItemProps) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const [scale, setScale] = React.useState(0.24);
+    const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+    const [previewReady, setPreviewReady] = React.useState(false);
+    
     const activeTemplate =
         DEFAULT_TEMPLATES.find((template) => template.id === resume.templateId) ??
         DEFAULT_TEMPLATES[0];
@@ -64,8 +68,39 @@ export const ResumeCardItem = ({
         return () => observer.disconnect();
     }, []);
 
+    React.useEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
+        if (typeof IntersectionObserver === "undefined") {
+            setPreviewReady(true);
+            return;
+        }
+        // Mount the real preview just before it scrolls into view. Its fonts then
+        // load through CSS, without warming every saved resume's font family.
+        const observer = new IntersectionObserver((entries) => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                setPreviewReady(true);
+                observer.disconnect();
+            }
+        }, {
+            root: element.closest("[data-radix-scroll-area-viewport]"),
+            rootMargin: "200px",
+        });
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, []);
+
+    const warmFont = () => {
+        void preloadFontFamily(resume.globalSettings?.fontFamily).catch(error => {
+            console.warn("Failed to preload resume font:", error);
+        });
+    };
+
     return (
         <motion.div
+            data-resume-id={id}
+            onPointerEnter={warmFont}
+            onFocusCapture={warmFont}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -83,11 +118,17 @@ export const ResumeCardItem = ({
                     "dark:hover:border-primary/40"
                 )}
             >
-                <CardContent className="p-0 flex-1 relative bg-gray-50 dark:bg-gray-900 overflow-hidden cursor-pointer">
+                <CardContent 
+                    className="p-0 flex-1 relative bg-gray-50 dark:bg-card overflow-hidden cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        router.push({ to: "/app/workbench/$id", params: { id } });
+                    }}
+                >
                     <div className="absolute inset-0 pb-6 flex items-center justify-center pointer-events-none transition-transform duration-300 group-hover:scale-[1.02] overflow-hidden" ref={containerRef}>
                         <div className="w-full h-full relative origin-top bg-white">
                             <div
-                                className="absolute top-0 left-0 bg-white"
+                                className="resume-preview absolute top-0 left-0 bg-white"
                                 style={{
                                     width: "210mm",
                                     height: "297mm",
@@ -97,18 +138,18 @@ export const ResumeCardItem = ({
                                     fontFamily: normalizeFontFamily(resume.globalSettings?.fontFamily),
                                 }}
                             >
-                                <ResumeTemplateComponent data={resume as any} template={activeTemplate} />
+                                {previewReady && <ResumeTemplateComponent data={resume as any} template={activeTemplate} />}
                             </div>
                         </div>
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 top-[60%] pointer-events-none bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-950 dark:via-gray-950/90 z-0"></div>
-                    <div className="absolute inset-x-0 bottom-0 pt-12 pb-3 px-4 flex justify-between items-end border-t border-transparent z-10 transition-colors group-hover:bg-white/50 dark:group-hover:bg-gray-950/50">
+                    <div className="absolute inset-x-0 bottom-0 top-[60%] pointer-events-none bg-gradient-to-t from-white via-white/90 to-transparent dark:from-background dark:via-background/90 z-0"></div>
+                    <div className="absolute inset-x-0 bottom-0 pt-12 pb-3 px-4 flex justify-between items-end border-t border-transparent z-10 transition-colors group-hover:bg-white/50 dark:group-hover:bg-background/50">
                         <div className="flex flex-col w-full">
-                            <span className="text-[15px] font-semibold truncate text-gray-900 dark:text-gray-100 drop-shadow-sm w-[90%]">
+                            <span className="text-[15px] font-semibold truncate text-gray-900 dark:text-foreground drop-shadow-sm w-[90%]">
                                 {resume.title || t("dashboard.resumes.untitled")}
                             </span>
-                            <span className="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5 font-medium">
+                            <span className="text-[11px] text-gray-600 dark:text-foreground/85 mt-0.5 font-medium">
                                 {t(`dashboard.templates.${templateNameKey}.name`)} · {new Intl.DateTimeFormat(locale, {
                                     year: 'numeric',
                                     month: 'short',
@@ -121,79 +162,70 @@ export const ResumeCardItem = ({
                         </div>
                     </div>
                 </CardContent>
-                <CardFooter className="pt-2 pb-2 px-2 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 z-10">
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 17,
+                <CardFooter className="p-0 border-t border-gray-100 dark:border-border bg-gray-50/50 dark:bg-card/30 overflow-hidden">
+                    <div className="flex w-full h-11 divide-x divide-gray-100 dark:divide-border">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push({ to: "/app/workbench/$id", params: { id } });
                             }}
+                            className="flex-1 flex items-center justify-center gap-1.5 hover:bg-white dark:hover:bg-secondary/80 transition-all duration-200 text-gray-700 dark:text-foreground hover:text-primary font-medium text-sm group"
                         >
-                            <Button
-                                variant="outline"
-                                className="w-full text-sm hover:bg-gray-100 dark:border-primary/50 dark:hover:bg-primary/10"
-                                size="sm"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveResume(id);
-                                    router.push(`/app/workbench/${id}`);
-                                }}
-                            >
-                                {t("common.edit")}
-                            </Button>
-                        </motion.div>
+                            <Edit2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform opacity-70 group-hover:opacity-100" />
+                            <span>{t("common.edit")}</span>
+                        </button>
 
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 17,
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                duplicateResume(resume);
                             }}
+                            className="flex-1 flex items-center justify-center gap-1.5 hover:bg-white dark:hover:bg-secondary/80 transition-all duration-200 text-gray-700 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 font-medium text-sm group"
                         >
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-500 dark:hover:bg-red-950/50 dark:hover:text-red-400"
-                                        size="sm"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                        }}
-                                    >
-                                        {t("common.delete")}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>{t("dashboard.resumes.deleteConfirmTitle")}</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            {t("dashboard.resumes.deleteConfirmDescription")}
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel onClick={(e) => e.stopPropagation()}>{t("common.cancel")}</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 border-none"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                deleteResume(resume);
-                                                toast.success(t("common.deleteSuccess"));
-                                            }}
-                                        >
-                                            {t("common.confirm")}
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </motion.div>
+                            <Copy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform opacity-70 group-hover:opacity-100" />
+                            <span>{t("common.copy")}</span>
+                        </button>
+
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowDeleteDialog(true);
+                            }}
+                            className="flex-1 flex items-center justify-center gap-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all duration-200 text-red-600 dark:text-red-400 font-medium text-sm group"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform opacity-80 group-hover:opacity-100" />
+                            <span>{t("common.delete")}</span>
+                        </button>
                     </div>
                 </CardFooter>
             </Card>
+
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("dashboard.resumes.deleteConfirmTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("dashboard.resumes.deleteConfirmDescription")}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(false); }}>
+                            {t("common.cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 border-none"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                deleteResume(resume);
+                                setShowDeleteDialog(false);
+                                toast.success(t("common.deleteSuccess"));
+                            }}
+                        >
+                            {t("common.confirm")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </motion.div>
     );
 };

@@ -16,6 +16,24 @@ export const DEFAULT_CONFIG: PhotoConfig = {
   visible: true,
 };
 
+export interface LogoConfig {
+  width: number;
+  height: number;
+  aspectRatio: "1:1" | "4:3" | "3:4" | "16:9" | "custom";
+  borderRadius: "none" | "medium" | "full" | "custom";
+  customBorderRadius: number;
+  visible?: boolean;
+}
+
+export const DEFAULT_LOGO_CONFIG: LogoConfig = {
+  width: 20,
+  height: 20,
+  aspectRatio: "1:1",
+  borderRadius: "none",
+  customBorderRadius: 0,
+  visible: true,
+};
+
 export const getRatioMultiplier = (ratio: PhotoConfig["aspectRatio"]) => {
   switch (ratio) {
     case "4:3":
@@ -29,7 +47,7 @@ export const getRatioMultiplier = (ratio: PhotoConfig["aspectRatio"]) => {
   }
 };
 
-export const getBorderRadiusValue = (config?: PhotoConfig) => {
+export const getBorderRadiusValue = (config?: PhotoConfig | LogoConfig) => {
   if (!config) return "0";
 
   switch (config.borderRadius) {
@@ -91,6 +109,8 @@ export interface Education {
   gpa?: string;
   description?: string;
   visible?: boolean;
+  logo?: string;
+  logoConfig?: LogoConfig;
 }
 
 export interface Experience {
@@ -100,6 +120,8 @@ export interface Experience {
   date: string;
   details: string;
   visible?: boolean;
+  logo?: string;
+  logoConfig?: LogoConfig;
 }
 
 export interface Skill {
@@ -125,6 +147,31 @@ export interface Certificate {
   width: number; // Width percentage to support flex layouts
 }
 
+export type PublicationStatus = "" | "published" | "accepted" | "preprint" | "submitted";
+
+export interface Publication {
+  id: string;
+  title: string;
+  authors: string;
+  highlightedAuthor: string;
+  venue: string;
+  date: string;
+  status: PublicationStatus;
+  link: string;
+  description: string;
+  visible: boolean;
+}
+
+export const RESUME_DATE_FORMATS = [
+  "YYYY/MM",
+  "YYYY.MM",
+  "YYYY-MM",
+  "MM/YYYY",
+  "short-month",
+] as const;
+
+export type ResumeDateFormat = (typeof RESUME_DATE_FORMATS)[number];
+
 export type GlobalSettings = {
   themeColor?: string | undefined;
   fontFamily?: string | undefined;
@@ -139,6 +186,7 @@ export type GlobalSettings = {
   centerSubtitle?: boolean | undefined;
   flexibleHeaderLayout?: boolean | undefined;
   autoOnePage?: boolean | undefined;
+  dateFormat?: ResumeDateFormat | undefined;
 };
 
 export interface ResumeTheme {
@@ -189,6 +237,8 @@ export interface ResumeData {
   education: Education[];
   experience: Experience[];
   projects: Project[];
+  /** Optional for compatibility with resumes saved before this section existed. */
+  publications?: Publication[];
   certificates: Certificate[];
   customData: Record<string, CustomItem[]>;
   skillContent: string;

@@ -13,6 +13,7 @@ import { useState, useCallback } from "react";
 import Field from "../Field";
 import ThemeModal from "@/components/shared/ThemeModal";
 import { useTranslations } from "@/i18n/compat/client";
+import LogoSelector from "@/components/shared/LogoSelector";
 
 interface EducationEditorProps {
   education: Education;
@@ -48,6 +49,27 @@ const EducationEditor: React.FC<EducationEditorProps> = ({
             value={education.major}
             onChange={(value) => handleChange("major", value)}
             placeholder={t("placeholders.major")}
+          />
+        </div>
+
+        <div className="bg-card rounded-xl p-3 border border-border">
+          <LogoSelector
+            schoolName={education.school}
+            logo={education.logo}
+            config={education.logoConfig}
+            onLogoChange={(logo, config) => {
+              onSave({
+                ...education,
+                logo: logo || "",
+                logoConfig: config,
+              });
+            }}
+            onConfigChange={(config) => {
+              onSave({
+                ...education,
+                logoConfig: config,
+              });
+            }}
           />
         </div>
 
@@ -87,7 +109,7 @@ const EducationEditor: React.FC<EducationEditorProps> = ({
 
         <Field
           label={t("labels.description")}
-          value={education.description}
+          value={education.description || ""}
           onChange={(value) => handleChange("description", value)}
           type="editor"
           placeholder={t("placeholders.description")}
@@ -141,7 +163,7 @@ const EducationItem = ({ education }: { education: Education }) => {
         }}
         className={cn(
           "w-12 flex items-center justify-center border-r shrink-0 touch-none",
-          "dark:border-neutral-800",
+          "dark:border-border",
           "border-border",
           expandedId === education.id
             ? "cursor-not-allowed"
@@ -188,7 +210,7 @@ const EducationItem = ({ education }: { education: Education }) => {
                   <p
                     className={cn(
                       "text-sm truncate",
-                      "dark:text-neutral-400",
+                      "dark:text-muted-foreground",
                       "text-gray-500"
                     )}
                   >

@@ -38,7 +38,7 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ projects, globalSetting
                                 </div>
                                 {projectLink && !centerSubtitle && (
                                     <a href={projectLink.href} target="_blank" rel="noopener noreferrer"
-                                        className={`underline ${flexLayout ? "" : "flex-1"}`} title={projectLink.title}>
+                                        className={`underline ${flexLayout ? "" : "flex-1"}`} title={projectLink.title} style={{ fontSize: `${globalSettings?.subheaderSize || 16}px` }}>
                                         {projectLink.label}
                                     </a>
                                 )}
@@ -49,14 +49,14 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ projects, globalSetting
                                     </motion.div>
                                 )}
                                 <div className={`text-subtitleFont shrink-0 ${flexLayout ? "ml-auto" : "flex-1 text-right"}`} style={{ fontSize: `${globalSettings?.subheaderSize || 16}px` }}>
-                                    {formatDateString(project.date, locale)}
+                                    {formatDateString(project.date, locale, globalSettings?.dateFormat)}
                                 </div>
                             </motion.div>
                             {project.role && !centerSubtitle && (
                                 <motion.div layout="position" className="text-subtitleFont" style={{ fontSize: `${globalSettings?.subheaderSize || 16}px` }}>{project.role}</motion.div>
                             )}
                             {projectLink && centerSubtitle && (
-                                <a href={projectLink.href} target="_blank" rel="noopener noreferrer" className="underline" title={projectLink.title}>{projectLink.label}</a>
+                                <a href={projectLink.href} target="_blank" rel="noopener noreferrer" className="underline" title={projectLink.title} style={{ fontSize: `${globalSettings?.subheaderSize || 16}px` }}>{projectLink.label}</a>
                             )}
                             {project.description && (
                                 <motion.div layout="position" className="mt-1 text-baseFont"

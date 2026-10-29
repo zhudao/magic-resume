@@ -28,12 +28,12 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
       .filter((field) => field.visible !== false && field.key !== "name" && field.key !== "title")
       .map((field) => ({
         key: field.key,
-        value: field.key === "birthDate" && basic[field.key] ? formatDateString(basic[field.key] as string, locale) : (basic[field.key] as string),
+        value: field.key === "birthDate" && basic[field.key] ? formatDateString(basic[field.key] as string, locale, globalSettings?.dateFormat) : (basic[field.key] as string),
         label: field.label,
         custom: false,
       }))
       .filter((item) => !!item.value);
-  }, [basic, locale]);
+  }, [basic, locale, globalSettings?.dateFormat]);
 
   const customFields =
     basic.customFields?.filter(
@@ -58,7 +58,7 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
 
   const getIcon = (iconName: string | undefined) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] as React.ElementType;
-    return IconComponent ? <IconComponent className="w-3.5 h-3.5" /> : null;
+    return IconComponent ? <IconComponent className="h-3.5 w-3.5 shrink-0" /> : null;
   };
 
   const showPhoto = basic.photo && basic.photoConfig?.visible;
@@ -71,7 +71,7 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
             {basic.name && nameField.visible !== false && (
               <motion.h1
                 layout="position"
-                className="font-bold tracking-widest whitespace-pre-wrap break-words text-black"
+                className="font-bold tracking-widest whitespace-normal break-normal [overflow-wrap:normal] text-black"
                 style={{ fontSize: `${(globalSettings?.headerSize || 20) * 2}px`, lineHeight: "1.1", marginBottom: "8px" }}
               >
                 {basic.name}
@@ -101,7 +101,7 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
             <div className="flex-1 min-w-[100px] shrink-0">
               <motion.h2
                 layout="position"
-                className="font-normal tracking-wide text-gray-700 whitespace-pre-wrap break-words"
+                className="font-normal tracking-wide text-gray-700 whitespace-normal break-normal [overflow-wrap:normal]"
                 style={{ fontSize: `${globalSettings?.subheaderSize || 16}px`, lineHeight: "1.3" }}
               >
                 {basic.title}
@@ -109,7 +109,7 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
             </div>
           )}
 
-          <motion.div layout="position" className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 uppercase tracking-[0.05em] text-gray-500 w-[80%] flex-shrink-0" style={{ fontSize: `${globalSettings?.baseFontSize || 14}px` }}>
+          <motion.div layout="position" className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 tracking-[0.05em] text-gray-500 w-[80%] flex-shrink-0" style={{ fontSize: `${globalSettings?.baseFontSize || 14}px`, lineHeight: 1.5 }}>
             {allFields.map((item) => {
               const customFieldHref =
                 item.custom && "href" in item && typeof item.href === "string"
@@ -117,29 +117,29 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
                   : null;
 
               return (
-                <div key={item.key} className="flex items-center gap-2 overflow-hidden">
+                <div key={item.key} className="flex items-start gap-2">
                   {globalSettings?.useIconMode && (
-                    <span className="text-gray-400 shrink-0">
+                    <span className="inline-flex h-[1.5em] shrink-0 items-center text-gray-400">
                       {getIcon(item.custom ? (item as any).icon : basic.icons?.[item.key as keyof typeof basic.icons])}
                     </span>
                   )}
-                  <div className="truncate min-w-0">
+                  <div className="min-w-0">
                     {item.key === "email" ? (
-                      <a href={`mailto:${item.value}`} className="hover:text-black transition-colors truncate block">
+                      <a href={`mailto:${item.value}`} className="block min-w-0 transition-colors [overflow-wrap:anywhere] hover:text-black">
                         {globalSettings?.useIconMode ? "" : `${t(`basicPanel.basicFields.${item.key}`)}: `}
                         {item.value}
                       </a>
                     ) : item.key === "website" || item.key === "github" ? (
-                      <a href={item.value.startsWith("http") ? item.value : `https://${item.value}`} className="hover:text-black transition-colors truncate block">
+                      <a href={item.value.startsWith("http") ? item.value : `https://${item.value}`} className="block min-w-0 transition-colors [overflow-wrap:anywhere] hover:text-black">
                         {globalSettings?.useIconMode ? "" : `${item.label}: `}
                         {item.value.replace(/^https?:\/\//, "")}
                       </a>
                     ) : customFieldHref ? (
-                      <a href={customFieldHref} target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors truncate block underline">
+                      <a href={customFieldHref} target="_blank" rel="noopener noreferrer" className="block min-w-0 underline transition-colors [overflow-wrap:anywhere] hover:text-black">
                         {item.value}
                       </a>
                     ) : (
-                      <span className="truncate block">
+                      <span className="block min-w-0 [overflow-wrap:anywhere]">
                         {globalSettings?.useIconMode
                           ? ""
                           : item.custom

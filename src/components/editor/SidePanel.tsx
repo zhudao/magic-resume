@@ -1,8 +1,9 @@
+import SectionIcon from "@/components/shared/SectionIcon";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Layout, Type, SpaceIcon, Palette, Zap } from "lucide-react";
 import debounce from "lodash/debounce";
-import { useTranslations } from "@/i18n/compat/client";
+import { useLocale, useTranslations } from "@/i18n/compat/client";
 import {
   Select,
   SelectContent,
@@ -17,8 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LayoutSetting from "./layout/LayoutSetting";
 import { useResumeStore } from "@/store/useResumeStore";
-import { cn } from "@/lib/utils";
-import { THEME_COLORS, MenuSection } from "@/types/resume";
+import { cn, normalizeDateFormat } from "@/lib/utils";
+import { THEME_COLORS, MenuSection, ResumeDateFormat } from "@/types/resume";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Popover,
@@ -70,7 +71,11 @@ function SettingCard({
   );
 }
 
-export function SidePanel() {
+export function SidePanel({
+  onSectionCreated,
+}: {
+  onSectionCreated?: () => void;
+} = {}) {
   const {
     activeResume,
     setActiveSection,
@@ -79,20 +84,31 @@ export function SidePanel() {
     updateMenuSections,
     setThemeColor,
     reorderSections,
-    addCustomData,
+    createCustomSection,
+    removeCustomData,
   } = useResumeStore();
   const {
     menuSections = [],
     globalSettings = {},
     activeSection,
+    customData = {},
   } = activeResume || {};
 
   const { themeColor = THEME_COLORS[0] } = globalSettings;
   const t = useTranslations("workbench.sidePanel");
+  const locale = useLocale();
+
+  const dateFormatOptions: { value: ResumeDateFormat; label: string }[] = [
+    { value: "YYYY/MM", label: "2024/06 (YYYY/MM)" },
+    { value: "YYYY.MM", label: "2024.06 (YYYY.MM)" },
+    { value: "YYYY-MM", label: "2024-06 (YYYY-MM)" },
+    { value: "MM/YYYY", label: "06/2024 (MM/YYYY)" },
+    { value: "short-month", label: t("mode.dateFormat.shortMonth") },
+  ];
 
   const currentTemplate = DEFAULT_TEMPLATES.find(
     (t) => t.id === activeResume?.templateId
-  );
+  ) ?? DEFAULT_TEMPLATES[0];
 
   const availableModules = useMemo(() => {
     return (
@@ -125,16 +141,25 @@ export function SidePanel() {
     []
   );
 
-  const generateCustomSectionId = (menuSections: any[]) => {
-    const customSections = menuSections.filter((s) =>
-      s.id.startsWith("custom")
-    );
-    const nextNum = customSections.length + 1;
+  const generateCustomSectionId = (
+    menuSections: MenuSection[],
+    customData: Record<string, unknown>
+  ) => {
+    const usedIds = new Set([
+      ...menuSections.map((section) => section.id),
+      ...Object.keys(customData),
+    ]);
+
+    let nextNum = 1;
+    while (usedIds.has(`custom-${nextNum}`)) {
+      nextNum += 1;
+    }
+
     return `custom-${nextNum}`;
   };
 
   const handleCreateSection = () => {
-    const sectionId = generateCustomSectionId(menuSections);
+    const sectionId = generateCustomSectionId(menuSections, customData);
     const newSection = {
       id: sectionId,
       title: sectionId,
@@ -143,8 +168,8 @@ export function SidePanel() {
       order: menuSections.length,
     };
 
-    updateMenuSections([...menuSections, newSection]);
-    addCustomData(sectionId);
+    createCustomSection(newSection);
+    onSectionCreated?.();
   };
   return (
     <motion.div
@@ -163,6 +188,7 @@ export function SidePanel() {
             setActiveSection={setActiveSection}
             toggleSectionVisibility={toggleSectionVisibility}
             updateMenuSections={updateMenuSections}
+            removeCustomData={removeCustomData}
             reorderSections={reorderSections}
           />
 
@@ -193,10 +219,12 @@ export function SidePanel() {
                           order: menuSections.length,
                         };
                         updateMenuSections([...menuSections, newSection]);
+                        setActiveSection(section.id);
+                        onSectionCreated?.();
                       }}
                       className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors text-left"
                     >
-                      <span className="text-lg">{section.icon}</span>
+                      <span className="text-lg"><SectionIcon icon={section.icon} /></span>
                       <span>{t(`layout.standardSections.${section.titleKey}`)}</span>
                     </button>
                   ))}
@@ -787,6 +815,46 @@ export function SidePanel() {
                   }
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">
+                {t("mode.dateFormat.title")}
+              </Label>
+              <Select
+                value={
+                  normalizeDateFormat(globalSettings?.dateFormat) ??
+                  (locale === "en" ? "MM/YYYY" : "YYYY/MM")
+                }
+                onValueChange={(value) =>
+                  updateGlobalSettings({
+                    dateFormat: value as ResumeDateFormat,
+                  })
+                }
+              >
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <SelectTrigger
+                    aria-label={t("mode.dateFormat.title")}
+                    className="border border-input bg-background transition-colors"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                </motion.div>
+                <SelectContent className="bg-popover border-border">
+                  {dateFormatOptions.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="cursor-pointer transition-colors hover:bg-accent focus:bg-accent"
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </SettingCard>

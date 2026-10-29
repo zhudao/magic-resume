@@ -65,11 +65,31 @@ pnpm dev
 
 4. 打开浏览器访问 `http://localhost:3000`
 
+### OrcaRouter（可选 AI 服务商）
+
+在「AI 服务商」中选择 OrcaRouter，通过 [Magic Resume 专属推荐链接](https://www.orcarouter.ai/ref/ref_54dd337f5d343624a551) 注册，随后使用 OrcaRouter 登录授权或填写自己的 API Key。获取模型列表后，选择模型并检测连接。
+
+该链接属于合作推荐链接，通过它注册并产生符合合作规则的消费，Magic Resume 可能获得分成。你可以自由选择其他服务商。OAuth 登录也携带同一个推荐码，用于授权流程中的新用户注册归因。
+
+应用用量归因与注册推荐归因是两项配置。部署者需从合作后台 Integration 页取得真实 `app_id`，在构建时设置 `VITE_ORCA_APP_ID`，并登记与部署地址一致的回调 URL，例如 `https://magicv.art/auth/orcarouter/callback`。本地调试使用 `http://localhost:3000/auth/orcarouter/callback`。未配置 `app_id` 时不会声明已启用应用用量归因；不要将 API Key 填入此变量。详见 [OrcaRouter 合作应用文档](https://docs.orcarouter.ai/getting-started/sign-in-with-orcarouter#verified-apps-partners)。
+
+配置位置：本地开发在 `.env.local` 中设置 `VITE_ORCA_APP_ID` 后重启开发服务；GitHub Actions 在仓库 **Settings → Secrets and variables → Actions → Variables** 中设置同名变量，Cloudflare 和 Docker 发布流程都会在构建时读取。Docker Compose 会从 shell 或 `.env` 读取同名构建参数；直接构建可使用 `docker build --build-arg VITE_ORCA_APP_ID="$VITE_ORCA_APP_ID" -t magic-resume .`。该值需要写入前端产物，仅给运行中的容器增加环境变量不会生效。未拿到真实值时保持未配置。
+
 ## 📦 构建打包
 
 ```bash
 pnpm build
 ```
+
+### AI 厂商网络配置
+
+Cloudflare Workers 使用平台原生 `fetch`，无需配置应用层代理。Node.js 或 Docker 部署在无法直连 OpenAI、Gemini、Anthropic 的地区时，可以设置 `AI_PROXY_URL`；同时兼容 `HTTPS_PROXY` 和 `HTTP_PROXY`。
+
+```bash
+AI_PROXY_URL=http://127.0.0.1:7890
+```
+
+DeepSeek、通义千问和豆包保持直连。
 
 ## 🐳 Docker 部署
 
@@ -90,12 +110,12 @@ docker compose up -d
 
 
 
-## 📝 开源协议与商业授权
+## 📝 许可协议与使用限制
 
-本项目源代码基于 **Apache 2.0** 协议开源，但附带**严格的商业使用限制**：
+本项目源代码基于 **Apache 2.0** 协议发布，并附带**仅限非商业使用**的额外限制：
 
 - **个人免费**：仅限个人非商业目的（如个人学习交流、制作个人简历）免费使用。
-- **商用需授权**：严禁未经授权的商业化使用。任何组织或个人，若将其作为服务（SaaS/PaaS等）向公众提供以获取利益，或作为企业商业运营使用，或进行二次商业化开发，**无论是否修改源代码，均须获取商业授权**。
+- **禁止商用**：不得将本项目用于任何商业目的，包括将其作为收费或营利性服务（如 SaaS/PaaS）对外提供、用于企业商业运营、转售或进行二次商业化开发，**无论是否修改源代码**。
 
 详情请查看 [LICENSE](LICENSE) 文件。
 
@@ -104,10 +124,10 @@ docker compose up -d
 - [x] AI 辅助编写
 - [x] 多语言支持
 - [ ] 支持更多简历模板
-- [ ] 更多格式导出
+- [x] 更多格式导出
 - [x] 自定义模型
 - [x] 自动一页纸
-- [ ] 导入 PDF, Markdown 等
+- [x] 导入 PDF, Markdown 等
 - [ ] 在线简历托管
 
 ## 📈 Star History
@@ -128,9 +148,7 @@ docker compose up -d
 - X: @GuangzhouY81070
 - Discord: 欢迎加入群组 https://discord.gg/9mWgZrW3VN
 - 邮箱：18806723365@163.com
-- 微信群：扫码加入开发交流群
   
-<img src="./images/wechat.jpg" width="200" alt="WeChat Group">
 
 - 项目主页：https://github.com/JOYCEQL/magic-resume
 

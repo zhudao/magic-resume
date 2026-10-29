@@ -65,11 +65,31 @@ pnpm dev
 
 4. Open browser and visit `http://localhost:3000`
 
+### OrcaRouter (optional AI provider)
+
+Select OrcaRouter in AI Providers, register through the [Magic Resume referral link](https://www.orcarouter.ai/ref/ref_54dd337f5d343624a551), then sign in with OrcaRouter or enter your own API key. Fetch the model list, select a model, and test the connection.
+
+This is a partner referral link. Magic Resume may earn a commission on eligible usage by referred sign-ups. Other providers remain available. OAuth sign-in also carries the same referral code for new sign-ups during authorization.
+
+App usage attribution is separate from sign-up referral attribution. Obtain the real `app_id` from the partner console's Integration page, set `VITE_ORCA_APP_ID` at build time, and register the exact deployment callback URL, such as `https://magicv.art/auth/orcarouter/callback`. Local development uses `http://localhost:3000/auth/orcarouter/callback`. Without an `app_id`, app usage attribution is not configured. This variable is a public application identifier, never an API key. See the [OrcaRouter partner app documentation](https://docs.orcarouter.ai/getting-started/sign-in-with-orcarouter#verified-apps-partners).
+
+For local development, set `VITE_ORCA_APP_ID` in `.env.local` and restart the dev server. For GitHub Actions, add the repository variable under **Settings → Secrets and variables → Actions → Variables**; both Cloudflare and Docker publishing pass it at build time. Docker Compose reads the build argument from the shell or `.env`. For a direct build, use `docker build --build-arg VITE_ORCA_APP_ID="$VITE_ORCA_APP_ID" -t magic-resume .`. This identifier is embedded in the frontend build; setting it only on a running container has no effect. Leave it unset until the real value is available.
+
 ## 📦 Build and Deploy
 
 ```bash
 pnpm build
 ```
+
+### AI provider networking
+
+Cloudflare Workers use the platform's native `fetch` and do not need an application-level proxy. For Node.js or Docker deployments in regions that cannot directly reach OpenAI, Gemini, or Anthropic, set `AI_PROXY_URL`. `HTTPS_PROXY` and `HTTP_PROXY` are also supported as fallbacks.
+
+```bash
+AI_PROXY_URL=http://127.0.0.1:7890
+```
+
+DeepSeek, Qwen, and Doubao continue to use a direct connection.
 
 
 ## 🐳 Docker Deployment
@@ -90,12 +110,12 @@ This will:
 - Start the container in the background
 
 
-## 📝 License and Commercial Use
+## 📝 License and Usage Restrictions
 
-The source code of this project is open-sourced under the **Apache 2.0** license, but with **strict commercial use restrictions**:
+The source code of this project is released under the **Apache 2.0** license with an additional **non-commercial use restriction**:
 
 - **Free for Personal Use**: Free to use purely for personal, non-commercial purposes (e.g., personal learning, creating your own resume).
-- **Commercial License Required**: Unauthorized commercial use is strictly prohibited. Any organization or individual that provides it as a service (SaaS/PaaS, etc.) to the public for profit, uses it for enterprise commercial operations, or conducts secondary commercial development, **must obtain a commercial license, regardless of whether the source code has been modified**.
+- **Commercial Use Prohibited**: The project may not be used for any commercial purpose, including providing it as a paid or profit-generating service (such as SaaS/PaaS), enterprise commercial operations, resale, or secondary commercial development, **regardless of whether the source code has been modified**.
 
 Please see the [LICENSE](LICENSE) file for detailed terms.
 
@@ -104,8 +124,8 @@ Please see the [LICENSE](LICENSE) file for detailed terms.
 - [x] AI-assisted writing
 - [x] Multi-language support
 - [ ] Support for more resume templates
-- [ ] Support for more export formats
-- [ ] Import PDF, Markdown, etc.
+- [x] Support for more export formats
+- [x] Import PDF, Markdown, etc.
 - [x] Custom model
 - [x] Auto one page
 - [ ] Online resume hosting
@@ -128,9 +148,7 @@ You can follow the latest updates via:
 - X: @GuangzhouY81070
 - Discord: Join our community https://discord.gg/9mWgZrW3VN
 - Email: 18806723365@163.com
-- WeChat Group: Scan to join our developer community
 
-  <img src="./images/wechat.jpg" width="200" alt="WeChat Group">
 
 - Project Homepage: https://github.com/JOYCEQL/magic-resume
 
