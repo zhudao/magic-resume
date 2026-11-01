@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslations } from "@/i18n/compat/client";
 import {
   AlertCircle,
@@ -13,7 +13,7 @@ import { useRouter } from "@/lib/navigation";
 import { Input } from "@/components/ui/input";
 import PdfExport from "../shared/PdfExport";
 import { useResumeStore } from "@/store/useResumeStore";
-import { useGrammarCheck } from "@/hooks/useGrammarCheck";
+import { useGrammarStore } from "@/store/useGrammarStore";
 import {
   Tooltip,
   TooltipContent,
@@ -21,27 +21,56 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { GrammarCheckDrawer } from "./grammar/GrammarCheckDrawer";
 import { getFileHandle, getConfig } from "@/utils/fileSystem";
+
+const LazyGrammarCheckDrawer = React.lazy(() =>
+  import("./grammar/GrammarCheckDrawer").then((mod) => ({
+    default: mod.GrammarCheckDrawer,
+  }))
+);
 
 interface EditorHeaderProps {
   isMobile?: boolean;
 }
 
 export function EditorHeader({ isMobile }: EditorHeaderProps) {
-  const {
-    activeResume,
-    updateResumeTitle,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-  } = useResumeStore();
-  const { errors } = useGrammarCheck();
+  const resumeId = useResumeStore((state) => state.activeResume?.id);
+  const resumeTitle = useResumeStore((state) => state.activeResume?.title);
+  const updateResumeTitle = useResumeStore((state) => state.updateResumeTitle);
+  const undo = useResumeStore((state) => state.undo);
+  const redo = useResumeStore((state) => state.redo);
+  const hasUndo = useResumeStore((state) =>
+    Boolean(
+      state.activeResumeId &&
+        (state.history[state.activeResumeId]?.length ?? 0) > 0
+    )
+  );
+  const hasRedo = useResumeStore((state) =>
+    Boolean(
+      state.activeResumeId &&
+        (state.future[state.activeResumeId]?.length ?? 0) > 0
+    )
+  );
+  const errorCount = useGrammarStore((state) => state.errors.length);
+  const [grammarDrawerMounted, setGrammarDrawerMounted] = useState(false);
   const router = useRouter();
   const t = useTranslations();
   const undoLabel = t("richEditor.undo");
   const redoLabel = t("richEditor.redo");
+
+  useEffect(() => {
+    if (errorCount > 0) {
+      setGrammarDrawerMounted(true);
+    }
+  }, [errorCount]);
+
+  useEffect(() => {
+    const handleOpenDrawer = () => setGrammarDrawerMounted(true);
+    document.addEventListener("open-grammar-drawer", handleOpenDrawer);
+    return () => {
+      document.removeEventListener("open-grammar-drawer", handleOpenDrawer);
+    };
+  }, []);
 
   const [backupConfigured, setBackupConfigured] = useState<boolean | null>(null);
   const [backupPath, setBackupPath] = useState<string>("");
@@ -121,8 +150,8 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
 
           <div className="relative hidden md:flex items-center group">
             <Input
-              key={activeResume?.id || "resume-title"}
-              defaultValue={activeResume?.title || ""}
+              key={resumeId || "resume-title"}
+              defaultValue={resumeTitle || ""}
               onBlur={(e) => {
                 updateResumeTitle(e.target.value || "未命名简历");
               }}
@@ -199,7 +228,7 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
                     size="icon"
                     className="h-8 w-8"
                     onClick={undo}
-                    disabled={!canUndo()}
+                    disabled={!hasUndo}
                     aria-label={undoLabel}
                   >
                     <Undo2 className="h-4 w-4" />
@@ -216,7 +245,7 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
                     size="icon"
                     className="h-8 w-8"
                     onClick={redo}
-                    disabled={!canRedo()}
+                    disabled={!hasRedo}
                     aria-label={redoLabel}
                   >
                     <Redo2 className="h-4 w-4" />
@@ -226,15 +255,19 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <GrammarCheckDrawer />
-          {errors.length > 0 && (
+          {grammarDrawerMounted && (
+            <React.Suspense fallback={null}>
+              <LazyGrammarCheckDrawer />
+            </React.Suspense>
+          )}
+          {errorCount > 0 && (
              <div 
                 className="flex items-center space-x-1 cursor-pointer animate-pulse"
                 onClick={() => document.dispatchEvent(new CustomEvent('open-grammar-drawer'))}
              >
                   <AlertCircle className="w-4 h-4 text-red-500" />
                   <span className="text-sm text-red-500">
-                    {t("grammarCheck.found_issues", { count: errors.length })}
+                    {t("grammarCheck.found_issues", { count: errorCount })}
                   </span>
              </div>
           )}
