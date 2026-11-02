@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { IconResumes, IconTemplates, IconSettings, IconAI } from "@/components/shared/icons/SidebarIcons";
+import { ArrowUpRight } from "lucide-react";
+import {
+  IconResumes,
+  IconTemplates,
+  IconSettings,
+  IconAI,
+  IconInterview,
+} from "@/components/shared/icons/SidebarIcons";
 import { usePathname, useRouter } from "@/lib/navigation";
 import {
   Sidebar,
@@ -28,11 +35,14 @@ interface MenuItem {
   url?: string;
   href?: string;
   icon: typeof IconResumes;
+  badge?: string;
+  external?: boolean;
   items?: { title: string; href: string }[];
 }
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const t = useTranslations("dashboard");
+  const locale = useLocale();
   const sidebarItems: MenuItem[] = [
     {
       title: t("sidebar.resumes"),
@@ -54,12 +64,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       url: "/app/dashboard/settings",
       icon: IconSettings,
     },
-
+    ...(locale === "zh"
+      ? [
+          {
+            title: "AI 面试助手",
+            url: "/zh/offerin",
+            icon: IconInterview,
+            external: true,
+          },
+        ]
+      : []),
   ];
 
   const router = useRouter();
   const pathname = usePathname();
-  const locale = useLocale();
   const [open, setOpen] = useState(true);
   const [collapsible, setCollapsible] = useState<"offcanvas" | "icon" | "none">(
     "icon"
@@ -68,6 +86,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const handleItemClick = (item: MenuItem) => {
     if (item.items) {
 
+    } else if (item.external) {
+      window.open(item.url || item.href || "/", "_blank", "noopener,noreferrer");
     } else {
       router.push(item.url || item.href || "/");
     }
@@ -121,14 +141,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                                   }`}
                               >
                                 <div
-                                  className="flex items-center gap-3 px-2 cursor-pointer"
+                                  className="flex items-center gap-3 px-2 cursor-pointer w-full"
                                   onClick={() => handleItemClick(item)}
                                 >
                                   <item.icon />
                                   {open && (
-                                    <span className="flex-1 text-sm">
+                                    <span className="flex-1 text-sm truncate">
                                       {item.title}
                                     </span>
+                                  )}
+                                  {item.external && open && (
+                                    <ArrowUpRight className="size-3.5 text-muted-foreground/60 shrink-0" />
                                   )}
                                 </div>
                               </SidebarMenuButton>

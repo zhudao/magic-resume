@@ -3,10 +3,11 @@ import {
   HeadContent,
   Outlet,
   Scripts,
-  useLocation,
+  useRouterState,
 } from "@tanstack/react-router";
 import appCss from "../app/globals.css?url";
 import landingCss from "@/components/home/landing.css?url";
+import offerinCss from "@/components/offerin/offerin.scss?url";
 import { NextIntlClientProvider } from "@/i18n/compat/client";
 import { useEffect, useState } from "react";
 import zhMessages from "@/i18n/locales/zh.json";
@@ -41,6 +42,11 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: landingCss,
       },
+      // Load before route navigation, and keep one stylesheet through hydration.
+      {
+        rel: "stylesheet",
+        href: offerinCss,
+      },
     ],
   }),
   component: RootComponent,
@@ -48,13 +54,17 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
-  const pathname = useLocation({
-    select: (location) => location.pathname,
+  // Follow the resolved location so the landing theme only changes after the
+  // outlet has actually left the landing page, not while the next route loads.
+  const pathname = useRouterState({
+    select: (state) => (state.resolvedLocation ?? state.location).pathname,
   });
   const landingLocale = getLocaleFromPathname(pathname);
   const isLandingPage =
     landingLocale !== null &&
     pathname.replace(/\/$/, "") === `/${landingLocale}`;
+  const isOfferInPage = pathname.includes("/offerin");
+  const forceLight = isLandingPage || isOfferInPage;
 
   const [locale, setLocale] = useState<Locale>(() => getPreferredLocale(pathname));
 
@@ -97,7 +107,7 @@ function RootComponent() {
           messages={messages}
           timeZone="Asia/Shanghai"
         >
-          <Providers forcedTheme={isLandingPage ? "light" : undefined}>
+          <Providers forcedTheme={forceLight ? "light" : undefined}>
             <ReactGrab />
             <Outlet />
           </Providers>
