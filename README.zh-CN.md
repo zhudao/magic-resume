@@ -7,6 +7,7 @@
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-10.0-purple)
 
 <a href="https://trendshift.io/repositories/13077" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13077" alt="Magic Resume | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+<a href="https://hellogithub.com/repository/JOYCEQL/magic-resume" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=51a0f545d0964a47a173794478119ec7&claim_uid=qMBAYh4ZFCgViJI" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 
 简体中文 | [English](./README.md)
@@ -14,6 +15,40 @@
 </div>
 
 Magic Resume 是一个现代化的在线简历编辑器，让创建专业简历变得简单有趣。基于 TanStack Start 和 Motion 构建，支持实时预览和自定义主题。
+
+<p align="center">
+  <a href="https://app.offerin.cn/r/aff_Wsk_9WRpwPmN">
+    <img src="./images/offerin-banner.png" alt="首席赞助商 Offerin AI - AI 时代面试笔试助手" width="100%" />
+  </a>
+</p>
+
+## ❤️ 其他赞助者
+
+如果您赞助了本项目，但没展示在这里，请联系我。
+
+<!-- GitHub sizes tables to their content; a wide first column fills the available width. -->
+<table>
+  <thead>
+    <tr>
+      <th width="10000" align="left">赞助者</th>
+      <th align="right">金额（人民币）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/fbitalk"><img src="https://github.com/fbitalk.png?size=40" width="40" height="40" alt="@fbitalk" /> @fbitalk</a></td>
+      <td align="right">¥20</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/yj147"><img src="https://github.com/yj147.png?size=40" width="40" height="40" alt="@yj147" /> @yj147</a></td>
+      <td align="right">¥10</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/someone1128"><img src="https://github.com/someone1128.png?size=40" width="40" height="40" alt="@someone1128" /> @someone1128</a></td>
+      <td align="right">¥10</td>
+    </tr>
+  </tbody>
+</table>
 
 ## 📸 项目截图
 
@@ -155,23 +190,3 @@ docker compose up -d
 ## 🌟 支持项目
 
 <img src="https://github.com/JOYCEQL/picx-images-hosting/raw/master/pintu-fulicat.com-1741081632544.26lmg2uc2m.webp" width="320"  alt="图片描述">
-
-## ❤️ 赞助名单
-
-<div align="center">
-  <h3>Sponsors</h3>
-  <p>如果您赞助了本项目，但没展示在这里，请联系我。</p>
-  <p>
-    <a href="https://github.com/yj147">
-      <img src="https://github.com/yj147.png?size=40" width="40" height="40" alt="@yj147" />
-    </a>
-    <a href="https://github.com/someone1128">
-      <img src="https://github.com/someone1128.png?size=40" width="40" height="40" alt="@someone1128" />
-    </a>
-    <!-- 在这里继续添加赞助者：
-    <a href="https://github.com/<username>">
-      <img src="https://github.com/<username>.png?size=40" width="40" height="40" alt="@<username>" />
-    </a>
-    -->
-  </p>
-</div>
